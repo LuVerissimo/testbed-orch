@@ -1,0 +1,98 @@
+services:
+  # AWS emulator
+  localstack:
+    image: localstack/localstack:3.3
+    ports:
+      - "4566:4566" # I want all AWS services on one port
+    environment:
+      SERVICES: dynamodb,sqs,cloudwatch,logs
+      DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+      DEBUG: ${LOCALSTACK_DEBUG:-0}
+    volumes:
+      - localstack-data:/var/lib/localstack
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  # Relational Store
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-testorch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-testorch}
+      POSTGRES_DB: ${POSTGRES_DB:-testorch}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-testorch}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  # Embedded Linux target (sim raspPi)
+  # Alpine + openssh serve. The device adapter shells into container.
+  # Device boots w/known test keypair
+  linux-target:
+    image: lscr.io/linuxserver/openssh-server:latest
+    hostname: linux-target
+    ports:
+      - "2222:2222"
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: UTC
+      PUBLIC_KEY_FILE: /config/keys/authorized_keys
+      SUDO_ACCESS: "true"
+      PASSWORD_ACCESS: "false"
+      USER_NAME: testuser
+    volumes:
+      - ./device-adapter/fixtures:/config/keys:ro
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2222"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  # Asset Manager is the gRPC service
+  asset-manager:
+    build:
+      context: ./asset-manager
+      dockerfile: Dockerfile
+    ports:
+      - "50051:50051"
+    environment:
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      DYNAMODB_ENDPOINT_URL: http://localstack:4566
+      DYNAMODB_TABLE_NAME: device-reservations
+      GRPC_PORT: 50051
+    depends_on:
+      localstack:
+        condition: service_healthy
+
+  # Test Manager is the REST API + worker
+  test-manager:
+    build:
+      context: ./test-manager
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-testorch}:${POSTGRES_PASSWORD:-testorch}@postgres:5432/${POSTGRES_DB:-testorch}
+      ASSET_MANAGER_GRPC_HOST: asset-manager
+      ASSET_MANAGER_GRPC_PORT: 50051
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      SQS_ENDPOINT_URL: http://localstack:4566
+    depends_on:
+      postgres:
+        condition: service_healthy
+      asset-manager:
+        condition: service_started
+
+volumes:
+  localstack-data:
+  postgres-data:
