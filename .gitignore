@@ -1,0 +1,70 @@
+create_github_issues.sh
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+wheels/
+pip-wheel-metadata/
+.installed.cfg
+MANIFEST
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# ── Node / CDK ────────────────────────────────────────────────────────────────
+node_modules/
+cdk.out/
+cdk.context.json
+*.js.map
+*.d.ts
+dist/
+.cache/
+
+# ── Protobuf generated stubs ──────────────────────────────────────────────────
+**/generated/
+*_pb2.py
+*_pb2_grpc.py
+*_pb2.pyi
+
+# ── AWS ───────────────────────────────────────────────────────────────────────
+.aws/
+*.pem
+*.p12
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+.docker/
+
+# ── Test artifacts ────────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.log
+test-results/
+
+# ── SSH fixtures (never commit real keys) ────────────────────────────────────
+device-adapter/fixtures/*.pem
+device-adapter/fixtures/id_*
+!device-adapter/fixtures/id_*.pub.example
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
