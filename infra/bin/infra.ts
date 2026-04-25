@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { AssetManagerStack } from '../lib/asset-manager-stack';
+import { TestbedStack }  from '../lib/testbed-stack';
 
 const app = new cdk.App();
 
-new AssetManagerStack(app, 'AssetManagerStack', {
+new TestbedStack(app, 'TestbedStack', {
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
     region: process.env.CDK_DEFAULT_REGION ?? 'us-east-1',

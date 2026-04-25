@@ -2,8 +2,17 @@ import * as cdk from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 
+// CDK Construct levels:
+//   L1 (Cfn*)  — 1:1 with a CloudFormation resource. Full control, maximum verbosity.
+//                Example: new CfnTable(this, 'T', { ... })
+//   L2         — Curated abstraction over L1. Secure defaults, typed props, grant methods.
+//                Example: new dynamodb.Table(this, 'T', { ... })
+//   L3 (Patterns) — Multiple resources wired together into a reusable pattern.
+//                Example: new ApplicationLoadBalancedFargateService(...)
+// We use L2 throughout this stack.
+
 /**
- * AssetManagerStack — owns all infrastructure for the Asset Manager service.
+ * TestbedStack — owns all infrastructure for the Asset Manager service.
  *
  * Currently provisions:
  *   - DeviceReservationsTable  (DynamoDB)
@@ -14,7 +23,7 @@ import { Construct } from 'constructs';
  *  
  * PostgreSQL lives in the Test Manager stack where we need ad-hoc queries over job history.
  */
-export class AssetManagerStack extends cdk.Stack {
+export class TestbedStack extends cdk.Stack {
   /** Exposed so other stacks or integration tests can reference the table. */
   public readonly deviceReservationsTable: dynamodb.Table;
 
@@ -80,7 +89,7 @@ export class AssetManagerStack extends cdk.Stack {
     // ── Stack outputs ─────────────────────────────────────────────────────────
     // CfnOutput writes a value into the CloudFormation stack outputs.
     // Other stacks, CI scripts, and the Makefile can read these with:
-    //   aws cloudformation describe-stacks --stack-name AssetManagerStack
+    //   aws cloudformation describe-stacks --stack-name TestbedStack
     //     --query "Stacks[0].Outputs"
     new cdk.CfnOutput(this, 'DeviceReservationsTableName', {
       value: this.deviceReservationsTable.tableName,
