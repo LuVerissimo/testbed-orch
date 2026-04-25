@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { Template, Match } from 'aws-cdk-lib/assertions';
-import { AssetManagerStack } from '../lib/asset-manager-stack';
+import { TestbedStack } from '../lib/testbed-stack';
 
 /**
  * CDK Assertion tests — "does synth produce the CloudFormation I expect?"
@@ -9,12 +9,12 @@ import { AssetManagerStack } from '../lib/asset-manager-stack';
  * synthesized into a CloudFormation template in memory, and then we assert
  * against that JSON. Think of it as unit-testing your infrastructure.
  */
-describe('AssetManagerStack', () => {
+describe('TestbedStack', () => {
   let template: Template;
 
   beforeAll(() => {
     const app = new cdk.App();
-    const stack = new AssetManagerStack(app, 'TestStack');
+    const stack = new TestbedStack(app, 'TestStack');
     // Template.fromStack() triggers synthesis and captures the CF template
     template = Template.fromStack(stack);
   });
