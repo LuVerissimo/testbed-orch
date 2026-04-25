@@ -1,9 +1,9 @@
-[built-system]
-requires = ["setupstotols>=68", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
-name = "asset-manager"'
+name = "asset-manager"
 version = "0.1.0"
 description = "gRPC service for device reservatoin and state management"
 requires-python = ">=3.11"
