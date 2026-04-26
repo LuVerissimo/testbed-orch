@@ -14,13 +14,13 @@ dev-down: ## Stop and remove all local containers and volumes
 # and test-manager/src/test_manager/generated/ from .proto files.
 
 proto: ## Generate Protobuf/gRPC Python stubs from proto/
-	python -m grpc_tools.protoc \
+	python3 -m grpc_tools.protoc \
 		-I proto \
 		--python_out=asset-manager/src/asset_manager/generated \
 		--grpc_python_out=asset-manager/src/asset_manager/generated \
 		--pyi_out=asset-manager/src/asset_manager/generated \
 		proto/*.proto
-	python -m grpc_tools.protoc \
+	python3 -m grpc_tools.protoc \
 		-I proto \
 		--python_out=test-manager/src/test_manager/generated \
 		--grpc_python_out=test-manager/src/test_manager/generated \
