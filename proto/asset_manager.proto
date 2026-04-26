@@ -1,0 +1,62 @@
+syntax = "proto3";
+package asset_manager;
+
+option java_multiple_files = true;
+import "google/protobuf/timestamp.proto";
+
+service DeviceService {
+    rpc ReserveDevice (ReserveDeviceRequest) returns (ReserveDeviceResponse) {}
+    rpc GetDevice (GetDeviceRequest) returns (GetDeviceResponse) {}
+    rpc ListDevices (ListDevicesRequest) returns (ListDevicesResponse) {}
+    rpc ReleaseDevice (ReleaseDeviceRequest) returns (ReleaseDeviceResponse) {}
+}
+
+enum DeviceStatus {
+    DEVICE_STATUS_UNSPECIFIED = 0;
+    DEVICE_STATUS_AVAILABLE = 1;
+    DEVICE_STATUS_RESERVED = 2;
+    DEVICE_STATUS_OFFLINE = 3;
+}
+
+message Device {
+    string device_id = 1;
+    string device_hostname = 2;
+    DeviceStatus status = 3;
+    string device_label = 4;
+}
+
+message Reservation {
+    string reservation_id = 1;
+    string device_id = 2;
+    string reserved_by = 3;
+    google.protobuf.Timestamp reserved_at = 4;
+    google.protobuf.Timestamp expires_at = 5;
+}
+message ReserveDeviceRequest {
+    string device_id = 1;
+    string reserved_by = 2;
+    int32 duration_seconds = 3;
+}
+message ReserveDeviceResponse {
+    Reservation reservation = 1;
+}
+message ReleaseDeviceRequest {
+    string reservation_id = 1;
+}
+message ReleaseDeviceResponse {
+    bool success = 1;
+}
+ 
+message GetDeviceRequest {
+    string device_id = 1;
+}
+message GetDeviceResponse {
+    Device device = 1;
+}
+
+message ListDevicesRequest {
+    optional DeviceStatus status = 1;
+}
+message ListDevicesResponse {
+    repeated Device devices = 1;
+}
