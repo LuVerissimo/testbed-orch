@@ -1,4 +1,7 @@
 import * as cdk from "aws-cdk-lib";
+import * as ec2 from "aws-cdk-lib/aws-ec2";
+import * as rds from "aws-cdk-lib/aws-rds";
+
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
 
@@ -100,6 +103,27 @@ export class TestbedStack extends cdk.Stack {
         type: dynamodb.AttributeType.STRING,
       },
       projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    const vpc = new ec2.Vpc(this, "TestbedVpc", {
+      maxAzs: 2,
+      natGateways: 1,
+    });
+
+    const database = new rds.DatabaseInstance(this, "TestbedRds", {
+      engine: rds.DatabaseInstanceEngine.postgres({
+        version: rds.PostgresEngineVersion.VER_16,
+      }),
+      instanceType: ec2.InstanceType.of(
+        ec2.InstanceClass.T3,
+        ec2.InstanceSize.MICRO,
+      ),
+      vpc,
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      credentials: rds.Credentials.fromGeneratedSecret("testorch"),
+      deletionProtection: true,
+      removalPolicy: cdk.RemovalPolicy.SNAPSHOT,
+      multiAz: false,
     });
 
     // ── Stack outputs ─────────────────────────────────────────────────────────
