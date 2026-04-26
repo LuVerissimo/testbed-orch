@@ -65,14 +65,32 @@ describe('TestbedStack', () => {
     })
   })
 
-  test('MultiAZ exists within Database', () => {
-    template.hasResourceProperties('AWS::RDS::DBInstance', {
-      MultiAZ: false,
+  describe('RDS', () => {
+    test('EC2 VPC is created', () => {
+      template.hasResourceProperties('AWS::EC2::VPC', {
+        EnableDnsHostnames: true,
+        EnableDnsSupport: true,
+      })
     })
-  })
-  test('Deletion Protection exists within DB', () => {
-    template.hasResourceProperties('AWS::RDS::DBInstance', {
-      DeletionProtection: true,
+
+    test('SecretsManager is used', () => {
+      template.hasResourceProperties('AWS::SecretsManager::Secret', {
+        GenerateSecretString: {
+          SecretStringTemplate: '{"username":"testorch"}',
+        },
+      })
+    })
+
+    test('MultiAZ exists within Database', () => {
+      template.hasResourceProperties('AWS::RDS::DBInstance', {
+        MultiAZ: false,
+      })
+    })
+
+    test('Deletion Protection exists within DB', () => {
+      template.hasResourceProperties('AWS::RDS::DBInstance', {
+        DeletionProtection: true,
+      })
     })
   })
 
@@ -80,6 +98,7 @@ describe('TestbedStack', () => {
     template.hasOutput('DeviceReservationsTableName', {
       Export: { Name: 'AssetManager-DeviceReservationsTableName' },
     })
+
     template.hasOutput('DeviceReservationsTableArn', {
       Export: { Name: 'AssetManager-DeviceReservationsTableArn' },
     })
