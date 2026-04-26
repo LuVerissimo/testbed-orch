@@ -1,0 +1,19 @@
+{
+  "overrides": [
+    {
+      "files": ".prettierrc",
+      "options": { "parser": "json" }
+    },
+    {
+      "files": "*.html.eex",
+      "options": { "parser": "html" }
+    },
+    {
+      "files": "*.test.ts",
+      "options": {
+        "semi": false,
+        "singleQuote": true
+      }
+    }
+  ]
+}

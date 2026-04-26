@@ -1,6 +1,6 @@
-import * as cdk from 'aws-cdk-lib';
-import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
-import { Construct } from 'constructs';
+import * as cdk from "aws-cdk-lib";
+import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import { Construct } from "constructs";
 
 // CDK Construct levels:
 //   L1 (Cfn*)  — 1:1 with a CloudFormation resource. Full control, maximum verbosity.
@@ -12,15 +12,15 @@ import { Construct } from 'constructs';
 // We use L2 throughout this stack.
 
 /**
- * TestbedStack — owns all infrastructure for the Asset Manager service.
+ * TestbedStack — owns all shared testbed infrastructure (DynamoDB, RDS, VPC)"
  *
  * Currently provisions:
  *   - DeviceReservationsTable  (DynamoDB)
  *
- * DynamoDB over PostgreSQL because Device reservation state is written 
- * by many concurrent workers, theres a need for single-digit-millisecond lookups by device ID, 
+ * DynamoDB over PostgreSQL because Device reservation state is written
+ * by many concurrent workers, theres a need for single-digit-millisecond lookups by device ID,
  * and has no relational joins.
- *  
+ *
  * PostgreSQL lives in the Test Manager stack where we need ad-hoc queries over job history.
  */
 export class TestbedStack extends cdk.Stack {
@@ -37,31 +37,35 @@ export class TestbedStack extends cdk.Stack {
     // PK  deviceId      (STRING)  — physical/virtual device
     // SK  reservationId (STRING)  — one device can have many reservation records
     //
-    // no need for GSI:
+    // Single-table queries without a GSI:
     //   "Who currently holds device-001?" → Query PK=device-001, FilterExpression status=RESERVED
     //   "Full reservation history for device-001?" → Query PK=device-001 (all SortKeys)
+    //
+    // GSI (status-reservedBy-index) enables:
+    //   "All AVAILABLE devices?" → Query GSI PK=AVAILABLE
+    //   "All devices held by user X?" → Query GSI PK=RESERVED, SK=user-x
     //
     // Billing: PAY_PER_REQUEST (on-demand).
     // on-demand so we never throttle or over-provision. Switch to PROVISIONED + auto-scaling only
     // when you have steady-state throughput data to right-size against.
     //
     // Air-gap / classified environment flag
-    // RemovalPolicy.DESTROY is fine for sandbox/dev — `cdk destroy` wipes the table. 
+    // RemovalPolicy.DESTROY is fine for sandbox/dev — `cdk destroy` wipes the table.
     // In a production or classified environment you MUST use
-    // RemovalPolicy.RETAIN. Accidental table deletion is an irreversible data loss event. 
+    // RemovalPolicy.RETAIN. Accidental table deletion is an irreversible data loss event.
     // Make this a required review gate before any prod deploy.
 
     this.deviceReservationsTable = new dynamodb.Table(
       this,
-      'DeviceReservationsTable',
+      "DeviceReservationsTable",
       {
-        tableName: 'device-reservations',
+        tableName: "device-reservations",
         partitionKey: {
-          name: 'deviceId',
+          name: "deviceId",
           type: dynamodb.AttributeType.STRING,
         },
         sortKey: {
-          name: 'reservationId',
+          name: "reservationId",
           type: dynamodb.AttributeType.STRING,
         },
         billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -69,7 +73,7 @@ export class TestbedStack extends cdk.Stack {
         // TTL — the Asset Manager sets this to (now + reservation_timeout).
         // DynamoDB quietly deletes expired rows in the background so stale
         // RESERVED records do not block future allocations.
-        timeToLiveAttribute: 'expiresAt',
+        timeToLiveAttribute: "expiresAt",
 
         // Point-in-time recovery gives you a 35-day continuous backup window.
         // Mandatory for any store that holds audit-trail data; in classified
@@ -85,22 +89,34 @@ export class TestbedStack extends cdk.Stack {
         removalPolicy: cdk.RemovalPolicy.DESTROY,
       },
     );
+    this.deviceReservationsTable.addGlobalSecondaryIndex({
+      indexName: "status-reservedBy-index",
+      partitionKey: {
+        name: "status",
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: "reservedBy",
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
 
     // ── Stack outputs ─────────────────────────────────────────────────────────
     // CfnOutput writes a value into the CloudFormation stack outputs.
     // Other stacks, CI scripts, and the Makefile can read these with:
     //   aws cloudformation describe-stacks --stack-name TestbedStack
     //     --query "Stacks[0].Outputs"
-    new cdk.CfnOutput(this, 'DeviceReservationsTableName', {
+    new cdk.CfnOutput(this, "DeviceReservationsTableName", {
       value: this.deviceReservationsTable.tableName,
-      description: 'DynamoDB table name — device reservations',
-      exportName: 'AssetManager-DeviceReservationsTableName',
+      description: "DynamoDB table name — device reservations",
+      exportName: "AssetManager-DeviceReservationsTableName",
     });
 
-    new cdk.CfnOutput(this, 'DeviceReservationsTableArn', {
+    new cdk.CfnOutput(this, "DeviceReservationsTableArn", {
       value: this.deviceReservationsTable.tableArn,
-      description: 'DynamoDB table ARN — for IAM policy attachment',
-      exportName: 'AssetManager-DeviceReservationsTableArn',
+      description: "DynamoDB table ARN — for IAM policy attachment",
+      exportName: "AssetManager-DeviceReservationsTableArn",
     });
   }
 }
