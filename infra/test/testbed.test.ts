@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib'
 import { Template, Match } from 'aws-cdk-lib/assertions'
 import { TestbedStack } from '../lib/testbed-stack'
+import { DeletionProtection } from 'aws-cdk-lib/aws-autoscaling'
 
 /**
  * CDK Assertion tests — "does synth produce the CloudFormation I expect?"
@@ -61,6 +62,17 @@ describe('TestbedStack', () => {
           ]),
         }),
       ]),
+    })
+  })
+
+  test('MultiAZ exists within Database', () => {
+    template.hasResourceProperties('AWS::RDS::DBInstance', {
+      MultiAZ: false,
+    })
+  })
+  test('Deletion Protection exists within DB', () => {
+    template.hasResourceProperties('AWS::RDS::DBInstance', {
+      DeletionProtection: true,
     })
   })
 
