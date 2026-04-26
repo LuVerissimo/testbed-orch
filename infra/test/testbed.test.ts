@@ -8,7 +8,7 @@ import { DeletionProtection } from 'aws-cdk-lib/aws-autoscaling'
  *
  * These run entirely offline (no AWS credentials needed). The CDK App is
  * synthesized into a CloudFormation template in memory, and then we assert
- * against that JSON. Think of it as unit-testing your infrastructure.
+ * against that JSON.
  */
 describe('TestbedStack', () => {
   let template: Template
