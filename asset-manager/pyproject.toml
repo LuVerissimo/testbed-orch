@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "asset-manager"
 version = "0.1.0"
 description = "gRPC service for device reservatoin and state management"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "grpcio>=1.60.0",
     "grpcio-tools>=1.60.0",

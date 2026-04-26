@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 .PHONY: dev dev-down proto migrate lint test test-unit test-integration build infra-synth infra-diff infra-deploy clean help
 
 # ── Local dev ─────────────────────────────────────────────────────────────────
@@ -26,7 +28,14 @@ proto: ## Generate Protobuf/gRPC Python stubs from proto/
 		--grpc_python_out=test-manager/src/test_manager/generated \
 		--pyi_out=test-manager/src/test_manager/generated \
 		proto/*.proto
+	sed -i 's/^import \(.*_pb2\) as/from . import \1 as/' \
+		asset-manager/src/asset_manager/generated/*_pb2_grpc.py	
 	@echo "Stubs generated."
+
+# ── Handles env loading ───────────────────────────────────────────────────────
+run-asset-manager: ## Run asset-manager locally against LocalStack
+	set -a && source .env && set +a && \
+	cd asset-manager && python3 -m asset_manager.server
 
 # ── Database migrations ───────────────────────────────────────────────────────
 

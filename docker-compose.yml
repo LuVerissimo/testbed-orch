@@ -10,6 +10,8 @@ services:
       DEBUG: ${LOCALSTACK_DEBUG:-0}
     volumes:
       - localstack-data:/var/lib/localstack
+      - ./localstack/init:/etc/localstack/init:ro
+
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:4566/_localstack/health"]
       interval: 5s
