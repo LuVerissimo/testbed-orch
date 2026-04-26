@@ -1,3 +1,4 @@
+from grpc_reflection.v1alpha import reflection
 import grpc, os, boto3, uuid
 from .generated import asset_manager_pb2, asset_manager_pb2_grpc
 from boto3.dynamodb.conditions import Key
@@ -119,12 +120,17 @@ class DeviceServiceServicer(asset_manager_pb2_grpc.DeviceServiceServicer):
 
 
 def serve():
+    port = os.environ.get("GRPC_PORT", "50051")
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     asset_manager_pb2_grpc.add_DeviceServiceServicer_to_server(
-        asset_manager_pb2_grpc.DeviceServiceServicer(), server
+        DeviceServiceServicer(), server
     )
-    # server.add_insecure_port("[::]:50051")
-    server.add_insecure_port("0.0.0.0:50051")
+    service_names = (
+        asset_manager_pb2.DESCRIPTOR.services_by_name["DeviceService"].full_name,
+        reflection.SERVICE_NAME,
+    )
+    reflection.enable_server_reflection(service_names, server)
+    server.add_insecure_port(f"0.0.0.0:{port}")
     server.start()
     server.wait_for_termination()
 
