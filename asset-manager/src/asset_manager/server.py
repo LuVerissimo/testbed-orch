@@ -119,6 +119,12 @@ class DeviceServiceServicer(asset_manager_pb2_grpc.DeviceServiceServicer):
         return asset_manager_pb2.ListDevicesResponse(devices=devices)
 
 
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
+
+
 def serve():
     port = os.environ.get("GRPC_PORT", "50051")
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
@@ -132,6 +138,7 @@ def serve():
     reflection.enable_server_reflection(service_names, server)
     server.add_insecure_port(f"0.0.0.0:{port}")
     server.start()
+    logger.info("Asset Manager gRPC server listening on port %s", port)
     server.wait_for_termination()
 
 
