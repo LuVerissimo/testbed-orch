@@ -40,3 +40,24 @@ class AssetManagerService(asset_manager_pb2_grpc.AssetManagerServicer):
             context.set_code(grpc.StatusCode.ALREADY_EXISTS)
             context.set_details("Device is already reserved")
             return asset_manager_pb2.ReserveDeviceResponse()
+
+    def ReleaseDevice(self, request, context):
+        try:
+            self.table.delete_item(Key={"reservation_id": request.reservation_id})
+            return asset_manager_pb2.ReleaseDeviceResponse(success=True)
+        except Exception as e:
+            context.set_code(grpc.StatusCode.NOT_FOUND)
+            context.set_details("Reservation not found")
+            return asset_manager_pb2.ReleaseDeviceResponse(success=False)
+
+    # def GetDevice(self, request, context):
+    # def ListDevices(self, request, context):
+
+    # def serve():
+    #     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    #     asset_manager_pb2_grpc.add_DeviceServiceServicer_to_server(
+    #         YourServicer(), server
+    #     )
+    #     server.add_insecure_port("[::]:50051")
+    #     server.start()
+    #     server.wait_for_termination()
