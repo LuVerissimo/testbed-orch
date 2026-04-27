@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timedelta, timezone
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Key, Attr
 
 
 class AlreadyReservedError(Exception):
@@ -18,12 +18,19 @@ class DeviceStore:
         now = datetime.now(tz=timezone.utc)
         expires_at = int((now + timedelta(seconds=ttl_seconds)).timestamp())
         try:
+            existing = self.table.query(
+                KeyConditionExpression=Key("deviceId").eq(device_id),
+                FilterExpression=Attr("status").eq("RESERVED"),
+            )
+            if existing.get("Items"):
+                raise AlreadyReservedError(device_id)
+
             self.table.put_item(
                 Item={
                     "deviceId": device_id,
                     "reservationId": reservation_id,
-                    "reserved_by": requester,
-                    "reserved_at": now.isoformat(),
+                    "reservedBy": requester,
+                    "reservedAt": now.isoformat(),
                     "expiresAt": expires_at,
                     "status": "RESERVED",
                 },
@@ -35,9 +42,9 @@ class DeviceStore:
         return {
             "reservation_id": reservation_id,
             "device_id": device_id,
-            "reserved_by": requester,
-            "reserved_at": now.isoformat(),
-            "expires_at": expires_at,
+            "reservedBy": requester,
+            "reservedAt": now.isoformat(),
+            "expiresAt": expires_at,
         }
 
     def release(self, device_id: str, reservation_id: str) -> bool:
