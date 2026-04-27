@@ -1,10 +1,10 @@
 from grpc_reflection.v1alpha import reflection
-import grpc, os, boto3, uuid
+import grpc, os, boto3, logging
 from .generated import asset_manager_pb2, asset_manager_pb2_grpc
-from boto3.dynamodb.conditions import Key
 from concurrent import futures
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from google.protobuf.timestamp_pb2 import Timestamp
+from .db import DeviceStore, AlreadyReservedError
 
 
 _STATUS_TO_STR = {
@@ -28,67 +28,45 @@ class DeviceServiceServicer(asset_manager_pb2_grpc.DeviceServiceServicer):
             "dynamodb", endpoint_url=os.environ.get("DYNAMODB_ENDPOINT_URL")
         )
         self.table = self.dynamodb.Table(os.environ.get("DYNAMODB_TABLE_NAME"))
+        self.store = DeviceStore(self.table)
 
     def ReserveDevice(self, request, context):
-        reservation_id = uuid.uuid4().hex
-        now = datetime.now(tz=timezone.utc)
-        expires_at_dt = now + timedelta(seconds=request.duration_seconds)
-
         try:
-            self.table.put_item(
-                Item={
-                    "deviceId": request.device_id,
-                    "reservationId": reservation_id,
-                    "reserved_by": request.reserved_by,
-                    "reserved_at": str(datetime.now()),
-                    "expiresAt": int(expires_at_dt.timestamp()),
-                    "status": "RESERVED",
-                },
-                ConditionExpression="attribute_not_exists(deviceId)",
+            r = self.store.reserve(
+                request.device_id, request.reserved_by, request.duration_seconds
             )
-        except self.dynamodb.meta.client.exceptions.ConditionalCheckFailedException:
+        except AlreadyReservedError:
             context.set_code(grpc.StatusCode.ALREADY_EXISTS)
             context.set_details("Device is already reserved")
             return asset_manager_pb2.ReserveDeviceResponse()
 
-        reservation = asset_manager_pb2.Reservation(
-            reservation_id=reservation_id,
-            device_id=request.device_id,
-            reserved_by=request.reserved_by,
-            reserved_at=_to_proto_ts(now),
-            expires_at=_to_proto_ts(expires_at_dt),
+        reservation = (
+            asset_manager_pb2.Reservation(
+                reservation_id=r["reservation_id"],
+                device_id=r["device_id"],
+                reserved_by=r["reserved_by"],
+                reserved_at=_to_proto_ts(datetime.fromisoformat(r["reserved_at"])),
+                expires_at=_to_proto_ts(
+                    datetime.fromisoformat(r["expires_at"], tz=timezone.utc)
+                ),
+            ),
         )
-
         return asset_manager_pb2.ReserveDeviceResponse(reservation=reservation)
 
     def ReleaseDevice(self, request, context):
-        try:
-            self.table.delete_item(
-                Key={
-                    "deviceId": request.device_id,
-                    "reservationId": request.reservation_id,
-                },
-                ConditionExpression="attribute_exists(deviceId)",
-            )
-        except self.table.meta.client.exceptions.ConditionalCheckFailedException:
+        released = self.store.release(request.device_id, request.reservation_id)
+        if not released:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details("Reservation not found")
             return asset_manager_pb2.ReleaseDeviceResponse(success=False)
-
         return asset_manager_pb2.ReleaseDeviceResponse(success=True)
 
     def GetDevice(self, request, context):
-        result = self.table.query(
-            KeyConditionExpression=Key("deviceId").eq(request.device_id)
-        )
-        items = result.get("Items", [])
-
-        if not items:
+        item = self.store.get(request.device_id)
+        if item is None:
             context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details("Device not found")
             return asset_manager_pb2.GetDeviceResponse()
 
-        item = items[0]
         device = asset_manager_pb2.Device(
             device_id=item["deviceId"],
             device_hostname=item.get("device_hostname", ""),
@@ -98,14 +76,13 @@ class DeviceServiceServicer(asset_manager_pb2_grpc.DeviceServiceServicer):
         return asset_manager_pb2.GetDeviceResponse(device=device)
 
     def ListDevices(self, request, context):
-        if request.status == asset_manager_pb2.DEVICE_STATUS_UNSPECIFIED:
-            result = self.table.scan()
+        status = request.status
+
+        if status == asset_manager_pb2.DEVICE_STATUS_UNSPECIFIED:
+            result = self.store.list_by_status(None)
         else:
-            status_str = _STATUS_TO_STR.get(request.status, "UNSPECIFIED")
-            result = self.table.query(
-                IndexName="status-reservedBy-index",
-                KeyConditionExpression=Key("status").eq(status_str),
-            )
+            status_str = _STATUS_TO_STR.get(status, "UNSPECIFIED")
+            result = self.store.list_by_status(status_str)
 
         devices = [
             asset_manager_pb2.Device(
@@ -114,12 +91,10 @@ class DeviceServiceServicer(asset_manager_pb2_grpc.DeviceServiceServicer):
                 status=_STR_TO_STATUS.get(item.get("status", "UNSPECIFIED"), 0),
                 device_label=item.get("device_label", ""),
             )
-            for item in result.get("Items", [])
+            for item in result
         ]
         return asset_manager_pb2.ListDevicesResponse(devices=devices)
 
-
-import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
