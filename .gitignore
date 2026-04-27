@@ -1,4 +1,4 @@
-create_github_issues.sh
+create_github_issues[0-99].sh
 
 # ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
