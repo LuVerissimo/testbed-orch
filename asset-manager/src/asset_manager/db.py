@@ -29,9 +29,9 @@ class DeviceStore:
                 Item={
                     "deviceId": device_id,
                     "reservationId": reservation_id,
-                    "reservedBy": requester,
-                    "reservedAt": now.isoformat(),
-                    "expiresAt": expires_at,
+                    "reserved_by": requester,
+                    "reserved_at": now.isoformat(),
+                    "expires_at": expires_at,
                     "status": "RESERVED",
                 },
                 ConditionExpression="attribute_not_exists(deviceId)",
@@ -42,9 +42,9 @@ class DeviceStore:
         return {
             "reservation_id": reservation_id,
             "device_id": device_id,
-            "reservedBy": requester,
-            "reservedAt": now.isoformat(),
-            "expiresAt": expires_at,
+            "reserved_by": requester,
+            "reserved_at": now.isoformat(),
+            "expires_at": expires_at,
         }
 
     def release(self, device_id: str, reservation_id: str) -> bool:

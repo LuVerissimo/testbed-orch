@@ -13,7 +13,7 @@ def store():
                 {"AttributeName": "deviceId", "AttributeType": "S"},
                 {"AttributeName": "reservationId", "AttributeType": "S"},
                 {"AttributeName": "status", "AttributeType": "S"},
-                {"AttributeName": "reservedBy", "AttributeType": "S"},
+                {"AttributeName": "reserved_by", "AttributeType": "S"},
             ],
             KeySchema=[
                 {"AttributeName": "deviceId", "KeyType": "HASH"},
@@ -25,7 +25,7 @@ def store():
                     "IndexName": "status-reservedBy-index",
                     "KeySchema": [
                         {"AttributeName": "status", "KeyType": "HASH"},
-                        {"AttributeName": "reservedBy", "KeyType": "RANGE"},
+                        {"AttributeName": "reserved_by", "KeyType": "RANGE"},
                     ],
                     "Projection": {"ProjectionType": "ALL"},
                 }
@@ -40,12 +40,12 @@ def store():
 def test_reserve_and_get(store):
     reservation = store.reserve("device1", "user1", ttl_seconds=3600)
     assert reservation["device_id"] == "device1"
-    assert reservation["reservedBy"] == "user1"
+    assert reservation["reserved_by"] == "user1"
 
     retrieved = store.get("device1")
     assert retrieved is not None
     assert retrieved["deviceId"] == "device1"
-    assert retrieved["reservedBy"] == "user1"
+    assert retrieved["reserved_by"] == "user1"
 
 
 def test_reserve_already_reserved(store):
@@ -115,11 +115,11 @@ def test_reserve_and_get_multiple(store):
 
     assert retrieved1 is not None
     assert retrieved1["deviceId"] == "device1"
-    assert retrieved1["reservedBy"] == "user1"
+    assert retrieved1["reserved_by"] == "user1"
 
     assert retrieved2 is not None
     assert retrieved2["deviceId"] == "device2"
-    assert retrieved2["reservedBy"] == "user2"
+    assert retrieved2["reserved_by"] == "user2"
 
 
 def test_reserve_and_release_multiple(store):
