@@ -40,15 +40,13 @@ class DeviceServiceServicer(asset_manager_pb2_grpc.DeviceServiceServicer):
             context.set_details("Device is already reserved")
             return asset_manager_pb2.ReserveDeviceResponse()
 
-        reservation = (
-            asset_manager_pb2.Reservation(
-                reservation_id=r["reservation_id"],
-                device_id=r["device_id"],
-                reserved_by=r["reserved_by"],
-                reserved_at=_to_proto_ts(datetime.fromisoformat(r["reserved_at"])),
-                expires_at=_to_proto_ts(
-                    datetime.fromisoformat(r["expires_at"], tz=timezone.utc)
-                ),
+        reservation = asset_manager_pb2.Reservation(
+            reservation_id=r["reservation_id"],
+            device_id=r["device_id"],
+            reserved_by=r["reserved_by"],
+            reserved_at=_to_proto_ts(datetime.fromisoformat(r["reserved_at"])),
+            expires_at=_to_proto_ts(
+                datetime.fromtimestamp(r["expires_at"], tz=timezone.utc)
             ),
         )
         return asset_manager_pb2.ReserveDeviceResponse(reservation=reservation)

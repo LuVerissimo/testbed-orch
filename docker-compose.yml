@@ -59,8 +59,8 @@ services:
   # Asset Manager is the gRPC service
   asset-manager:
     build:
-      context: ./asset-manager
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: asset-manager/Dockerfile
     ports:
       - "50051:50051"
     environment:

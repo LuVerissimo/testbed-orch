@@ -32,8 +32,8 @@ grpcurl -plaintext \
 "reservation": {
 "reservationId": "7185961b13b446b5b74cf2de024e02ee",
 "deviceId": "device-001",
-"reservedBy": "me",
-"reservedAt": "2026-04-26T18:16:55.045725Z",
-"expiresAt": "2026-04-26T18:17:55.045725Z"
+"reserved_by": "me",
+"reserved_at": "2026-04-26T18:16:55.045725Z",
+"expires_at": "2026-04-26T18:17:55.045725Z"
 }
 }
