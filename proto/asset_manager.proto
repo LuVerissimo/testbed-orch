@@ -42,6 +42,7 @@ message ReserveDeviceResponse {
 }
 message ReleaseDeviceRequest {
     string reservation_id = 1;
+    string device_id = 2;
 }
 message ReleaseDeviceResponse {
     bool success = 1;
