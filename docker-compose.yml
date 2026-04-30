@@ -77,12 +77,12 @@ services:
   # Test Manager is the REST API + worker
   test-manager:
     build:
-      context: ./test-manager
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: test-manager/Dockerfile
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-testorch}:${POSTGRES_PASSWORD:-testorch}@postgres:5432/${POSTGRES_DB:-testorch}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-testorch}:${POSTGRES_PASSWORD:-testorch}@postgres:5432/${POSTGRES_DB:-testorch}
       ASSET_MANAGER_GRPC_HOST: asset-manager
       ASSET_MANAGER_GRPC_PORT: 50051
       AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
@@ -94,7 +94,7 @@ services:
         condition: service_healthy
       asset-manager:
         condition: service_started
-
+      command: uvicorn test_manager.app:app --host 0.0.0.0 --port 8000
 volumes:
   localstack-data:
   postgres-data:
