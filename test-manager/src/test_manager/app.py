@@ -6,6 +6,7 @@ from .schemas import JobCreate, JobResponse
 from .models import TestJobs
 from uuid import UUID
 import grpc
+from enqueue import enqueue_job
 
 app = FastAPI()
 _channel = grpc.insecure_channel("asset-manager:50051")
@@ -48,6 +49,7 @@ async def create_job(payload: JobCreate, db: AsyncSession = Depends(get_db)):
 
     await db.commit()
     await db.refresh(job)
+    enqueue_job(job.id)
     return job
 
 

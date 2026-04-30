@@ -10,9 +10,9 @@ class JobCreate(BaseModel):
 
 class JobResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-
     id: UUID
     device_id: str
+    reservation_id: str
     status: str
     config: dict
     created_at: datetime
