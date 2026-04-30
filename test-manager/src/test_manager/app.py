@@ -49,7 +49,7 @@ async def create_job(payload: JobCreate, db: AsyncSession = Depends(get_db)):
 
     await db.commit()
     await db.refresh(job)
-    await enqueue_job(job.id)
+    enqueue_job(job.id)
     return job
 
 
