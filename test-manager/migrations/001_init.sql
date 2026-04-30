@@ -1,6 +1,7 @@
 CREATE TABLE test_jobs (
     id UUID PRIMARY KEY,
     device_id TEXT NOT NULL,
+    reservation_id VARCHAR,
     status VARCHAR NOT NULL DEFAULT 'pending'
         CHECK (status IN ('pending', 'running', 'completed', 'failed')),
     config JSONB,
