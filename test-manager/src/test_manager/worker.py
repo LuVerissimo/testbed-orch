@@ -4,6 +4,7 @@ from sqlalchemy import update
 from test_manager.generated import asset_manager_pb2, asset_manager_pb2_grpc
 from .database import AsyncSessionLocal
 from .models import TestJobs, TestResults
+from .metric import track_job
 
 log = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ async def poll() -> None:
             await process_job(msg)
 
 
+@track_job("process_job")
 async def process_job(msg: dict) -> None:
     receipt = msg["ReceiptHandle"]
     job_id = json.loads(msg["Body"])["job_id"]
